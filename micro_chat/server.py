@@ -16,7 +16,9 @@ class Server:
 
         # create app so that eventlet has something to run
         # there's probably a better way but I can't find it
-        self.app = socketio.WSGIApp(self.sio, static_files={})
+        self.app = socketio.WSGIApp(self.sio, static_files={
+            '/': f'/frontend/'
+        })
 
         self.messages = []
         @self.sio.event
