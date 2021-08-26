@@ -1,38 +1,92 @@
+import sys
+
 import socketio
+import readchar
 
 class Client:
+    CTRL_C = '\x03'
+    CTRL_Z = '\x1a'
+    BACKSPACE_CHAR = '\x7f'
+    NEWLINE_CHAR_CODE = 13
+
+    client: socketio.Client
+    server_address: str
+    server_password: str
+    username: str
+    waiting_for_input: bool = False
+    input_buffer: str = ''
+
     def __init__(self):
 
         self.client = socketio.Client()
         
         @self.client.on('connect')
         def connect():
-            print('\nConnected')
+            self.print_output('Connected')
         
         @self.client.on('message')
         def message(data):
             sender = data['sender']
             content = data['content']
-            print(f'\n [{sender}] {content}')
+            if sender != self.username:
+                self.print_output(f'[{sender}] {content}')
+        
+        @self.client.on('connect_error')
+        def connect_error(data):
+            print('Connection failed due to susu')
 
         @self.client.on('disconnect')
         def disconnect():
-            print('\nDisconnected')
+            self.print_output('Disconnected')
 
     def run(self):
         self.server_address = 'http://' + input('Enter address of server (eg 1.2.3.4:1234): ')
-        self.password = input('Enter password of server: ')
+        self.server_password = input('Enter password of server: ')
         self.username = input('Enter username to use: ')
         try:
             self.client.connect(self.server_address,
-                auth={'username' : self.username, 'password' : self.password})
+                auth={'username' : self.username, 'password' : self.server_password})
             self.input_loop()
-        except:
+        except (socketio.exceptions.ConnectionError,
+            socketio.exceptions.ConnectionRefusedError):
             print('Failed to connect')
+    
+    def print_output(self, message):
+        ''' Print output to the console, without messing up the input too much '''
+        if self.waiting_for_input:
+            print('\r' + message + '\r', flush=True)
+            print('> ' + self.input_buffer, end='', flush=True)
+        else:
+            print(message)
 
     def input_loop(self):
         print('Enter a message: ')
         while True:
-            message_content = input('>')
+            self.input_buffer = ''
+            self.waiting_for_input = True
+            print('> ', end='', flush=True)
+            while self.waiting_for_input:
+                char = readchar.readchar()
+                print(char, end='', flush=True)
+
+                # readchar blocks KeyboardInterrupt by default, so manually make it
+                if char == self.CTRL_C  or char == self.CTRL_Z:
+                    raise KeyboardInterrupt()
+                # Send message on enter
+                elif char == chr(self.NEWLINE_CHAR_CODE):
+                    self.waiting_for_input = False
+                # Delete char on backspace
+                elif char == '\b' or char == self.BACKSPACE_CHAR:
+                    if len(self.input_buffer) > 0:
+                        sys.stdout.write('\b \b') # move left, clear char, move left
+                        sys.stdout.flush()
+                        self.input_buffer = self.input_buffer[:-1]
+                # Normal behaviour
+                else:
+                    self.input_buffer += char
+                    
+            # Add newline to make next message not go on same line
+            print('')
+
             self.client.emit('send',
-                {'sender' : self.username, 'content' : message_content})
+                {'sender' : self.username, 'content' : self.input_buffer})

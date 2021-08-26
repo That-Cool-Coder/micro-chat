@@ -8,6 +8,7 @@ class Server:
         self.port = 5000
 
         self.sio = socketio.Server()
+        self.sio.quiet = True
 
         # Dict of {sessionId : username}
         self.client_usernames = {}
@@ -28,7 +29,7 @@ class Server:
                 self.sio.disconnect(sid)
             elif auth['username'] in self.client_usernames.values():
                 username = auth['username'] # can't use dict access in f-string
-                print(f'Rejected connection from "{username}"" - username already used')
+                print(f'Rejected connection from "{username}" - username already used')
                 self.sio.disconnect(sid)
             else:
                 username = auth['username'] # can't use dict access in f-string
@@ -53,4 +54,5 @@ class Server:
             self.sio.emit('message', data)
 
     def run(self):
-        eventlet.wsgi.server(eventlet.listen(('', self.port)), self.app)
+        print('Running')
+        eventlet.wsgi.server(eventlet.listen(('', self.port)), self.app, log_output=False)
