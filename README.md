@@ -8,7 +8,17 @@ Python >= 3.7 is required.
 
 Clone this repo into a folder somewhere.
 
-Install dependencies with
+Install dependencies for running server:
+```
+pip3 install -r requirements-server.txt
+```
+
+Install dependencies for running client:
+```
+pip3 install -r requirements-client.txt
+```
+
+Install all dependencies:
 ```
 pip3 install -r requirements.txt
 ```
