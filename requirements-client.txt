@@ -1,4 +1,0 @@
-python-socketio
-argparse
-websocket-client
-readchar
