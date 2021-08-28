@@ -22,3 +22,27 @@ To run a client, run
 ```
 python3 -m micro_chat -c
 ```
+
+## `scripts` directory
+
+This directory contains batch/shell scripts for auxilliary program actions like building into an executable.
+
+#### The `packaged` subdirectory
+
+This directory contains scripts that are packaged with the executable for distribution.
+
+## SocketIO event names
+
+#### `send`
+
+Emitted from client to send message to server.
+
+Data format:
+```{sender : <string> (must correspond to username in username table), content : <string>}```
+
+#### `new_message`
+
+Emitted from server to push send messages to clients.
+
+Data format:
+```{sender : <string>, content : <string>}```

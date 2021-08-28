@@ -2,6 +2,8 @@ import socketio
 import readchar
 
 class Client:
+    CONNECTION_REFUSED_BY_SERVER = 'Connection refused by the server'
+
     client: socketio.Client
     server_address: str
     server_password: str
@@ -10,14 +12,13 @@ class Client:
     input_buffer: str = ''
 
     def __init__(self):
-
         self.client = socketio.Client()
         
         @self.client.on('connect')
         def connect():
             self.print_output('Connected')
         
-        @self.client.on('message')
+        @self.client.on('new_message')
         def message(data):
             sender = data['sender']
             content = data['content']
@@ -26,7 +27,10 @@ class Client:
         
         @self.client.on('connect_error')
         def connect_error(data):
-            print('Connection failed due to susu')
+            if data == self.CONNECTION_REFUSED_BY_SERVER:
+                print('Could not find server')
+            else:
+                print(data)
 
         @self.client.on('disconnect')
         def disconnect():
@@ -40,12 +44,13 @@ class Client:
             self.client.connect(self.server_address,
                 auth={'username' : self.username, 'password' : self.server_password})
             self.input_loop()
+            self.client.wait()
         except (socketio.exceptions.ConnectionError,
             socketio.exceptions.ConnectionRefusedError):
             print('Failed to connect')
     
     def print_output(self, message):
-        ''' Print output to the console, without messing up the input too much '''
+        ''' Print output to the console without messing up the input too much '''
 
         if self.waiting_for_input:
             print('\r' + message + '\r', flush=True)

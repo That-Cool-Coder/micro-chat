@@ -1,11 +1,23 @@
+from eventlet.green import socket
 import socketio
 import eventlet
 
 class Server:
-    def __init__(self):
-        self.password = input('Enter a password for the server: ')
+    port: int
+    password: str
+    sio: socketio.Server
+    app: socketio.WSGIApp
+    client_usernames: dict
+    init_success: bool = False
 
-        self.port = 5000
+    def __init__(self):
+        port = input('Enter a port to run the server on: ')
+        if not self.port_is_valid(port):
+            print('Invalid port number')
+            return
+        self.port = int(port)
+
+        self.password = input('Enter a password for the server: ')
 
         self.sio = socketio.Server()
         self.sio.quiet = True
@@ -32,6 +44,7 @@ class Server:
                 print(f'Rejected connection from "{username}" - username already used')
                 self.sio.disconnect(sid)
             else:
+                # Nominal case of success
                 username = auth['username'] # can't use dict access in f-string
                 print(f'Accepted connection from "{username}"')
                 self.client_usernames[sid] = username
@@ -39,7 +52,10 @@ class Server:
         @self.sio.on('disconnect')
         def disconnect(sid):
             username = self.client_usernames.get(sid, '<unknown>')
-            print(f'Disconnected "{username}"')
+            print(f'Lost connection from "{username}"')
+
+            if sid in self.client_usernames:
+                del self.client_usernames[sid]
 
         @self.sio.on('send')
         def send(sid, data):
@@ -51,8 +67,18 @@ class Server:
             if 'sender' not in data or 'content' not in data:
                 return
 
-            self.sio.emit('message', data)
+            self.sio.emit('new_message', data)
+        
+        self.init_success = True
+
+    def port_is_valid(self, port: str):
+        try:
+            port_num = int(port)
+            return 1 < port_num < 2 ** 16
+        except:
+            return False
 
     def run(self):
-        print('Running')
-        eventlet.wsgi.server(eventlet.listen(('', self.port)), self.app, log_output=False)
+        if self.init_success:
+            print('Running')
+            eventlet.wsgi.server(eventlet.listen(('', self.port)), self.app, log_output=False)
