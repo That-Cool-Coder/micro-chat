@@ -1,16 +1,7 @@
-import sys
-import string
-
 import socketio
 import readchar
 
 class Client:
-    CTRL_C = '\x03'
-    CTRL_Z = '\x1a'
-    BACKSPACE_CHAR = '\x7f'
-    NEWLINE_CHAR_CODE = 13
-    PRINTABLE_CHARS = list(string.ascii_letters + string.digits + string.punctuation + ' ')
-
     client: socketio.Client
     server_address: str
     server_password: str
@@ -42,7 +33,7 @@ class Client:
             self.print_output('Disconnected')
 
     def run(self):
-        self.server_address = 'http://' + input('Enter address of server (eg 1.2.3.4:1234): ')
+        self.server_address = 'http://' + input('Enter address of server (eg 10.20.30.40:1234): ')
         self.server_password = input('Enter password of server: ')
         self.username = input('Enter username to use: ')
         try:
@@ -56,58 +47,21 @@ class Client:
     def print_output(self, message):
         ''' Print output to the console, without messing up the input too much '''
 
-        # Remove all invalid chars, to stop people from putting color escape codes, etc
-        char_list = [char for char in list(message) if char in self.PRINTABLE_CHARS]
-        cleaned_message = ''.join(char_list)
-
         if self.waiting_for_input:
-            print('\r' + cleaned_message + '\r', flush=True)
-            print('> ' + self.input_buffer, end='', flush=True)
+            print('\r' + message + '\r', flush=True)
+            print('> ', end='', flush=True)
         else:
-            print(cleaned_message)
+            print(message)
     
     def get_message(self):
         ''' Get a message from the user.
         Returns None if the user pressed KeyboardInterrupt'''
 
-        self.input_buffer = ''
         self.waiting_for_input = True
-        keyboard_interrupt_triggered = False
-        print('> ', end='', flush=True)
-        
-        while self.waiting_for_input:
-            char = readchar.readchar()
-            print(char, end='', flush=True)
-
-            # readchar blocks KeyboardInterrupt by default, so manually make it
-            if char == self.CTRL_C  or char == self.CTRL_Z:
-                self.client.disconnect()
-                self.waiting_for_input = False
-                keyboard_interrupt_triggered = True
-                break
-            # Send message on enter
-            elif char == chr(self.NEWLINE_CHAR_CODE):
-                self.waiting_for_input = False
-            # Delete char on backspace
-            elif char == '\b' or char == self.BACKSPACE_CHAR:
-                if len(self.input_buffer) > 0:
-                    sys.stdout.write('\b \b') # move left, clear char, move left
-                    sys.stdout.flush()
-                    self.input_buffer = self.input_buffer[:-1]
-            # Normal behaviour
-            elif char in self.PRINTABLE_CHARS:
-                self.input_buffer += char
-            # Make a bell noise on invalid chars
-            else:
-                sys.stdout.write('\a')
-                
-        # Add newline to make next message not go on same line
-        print('')
-
-        if keyboard_interrupt_triggered:
-            return None
-        else:
-            return self.input_buffer
+        print('', end='', flush=True) # flush using print because input doesn't allow flush=True
+        message = input('> ')
+        self.waiting_for_input = False
+        return message
 
     def input_loop(self):
         print('Enter a message: ')
