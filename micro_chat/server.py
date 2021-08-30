@@ -48,6 +48,7 @@ class Server:
                 username = auth['username'] # can't use dict access in f-string
                 print(f'Accepted connection from "{username}"')
                 self.client_usernames[sid] = username
+                self.sio.emit('user_joined', {'username' : username})
         
         @self.sio.on('disconnect')
         def disconnect(sid):
@@ -56,6 +57,7 @@ class Server:
 
             if sid in self.client_usernames:
                 del self.client_usernames[sid]
+                self.sio.emit('user_left', {'username' : username})
 
         @self.sio.on('send')
         def send(sid, data):
@@ -81,4 +83,9 @@ class Server:
     def run(self):
         if self.init_success:
             print('Running')
-            eventlet.wsgi.server(eventlet.listen(('', self.port)), self.app, log_output=False)
+            try:
+                eventlet.wsgi.server(eventlet.listen(('', self.port)), self.app, log_output=False)
+            except PermissionError:
+                print('Failed to run server: the port is already in use')
+            except:
+                print('Failed to run server')

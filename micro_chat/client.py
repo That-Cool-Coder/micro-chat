@@ -23,7 +23,18 @@ class Client:
             sender = data['sender']
             content = data['content']
             if sender != self.username:
-                self.print_output(f'[{sender}] {content}')
+                self.print_output(f'[New message: {sender}] {content}')
+        
+        @self.client.on('user_joined')
+        def user_joined(data):
+            username = data['username']
+            if username != self.username:
+                self.print_output(f'[User joined: {username}]')
+        
+        @self.client.on('user_left')
+        def user_left(data):
+            username = data['username']
+            self.print_output(f'[User left: {username}]')
         
         @self.client.on('connect_error')
         def connect_error(data):

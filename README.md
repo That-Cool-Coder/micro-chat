@@ -46,3 +46,17 @@ Emitted from server to push send messages to clients.
 
 Data format:
 ```{sender : <string>, content : <string>}```
+
+#### `user_joined`
+
+Emitted from the server to notify clients of a new user.
+
+Data format:
+```{username : <string>}```
+
+#### `user_left`
+
+Emitted from the server to notify clients of a user leaving
+
+Data format:
+```{username : <string>}```
