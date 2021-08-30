@@ -1,5 +1,4 @@
 import socketio
-import readchar
 
 class Client:
     CONNECTION_REFUSED_BY_SERVER = 'Connection refused by the server'
