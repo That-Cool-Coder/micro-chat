@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+# Runner file for easier use of micro-chat
+# Just calls __main__.py
+
+from micro_chat import __main__
